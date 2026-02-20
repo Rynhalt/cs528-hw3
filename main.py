@@ -60,6 +60,8 @@ def file_reader(request):
     filename = filename.lstrip("/")
     object_name = f"{BUCKET_PREFIX}/{filename}" if BUCKET_PREFIX else filename
 
+    print(f"DEBUG filename={filename} object_name={object_name} path={request.path} query={request.query_string}")
+
     # Fetch from GCS and return contents
     try:
         bucket = storage_client.bucket(BUCKET_NAME)
