@@ -37,10 +37,10 @@ def file_reader(request):
         print(f"501 not implemented: method={request.method} path={request.path}")
         return Response("501 Not Implemented\n", status=501, mimetype="text/plain")
 
-    # Extract requested filename
     filename = request.args.get("file", "")
     if not filename:
-        # Treat missing file parameter as "not found" for this assignment framing
+    # request.path will look like "/1585.html" when client calls it
+        filename = request.path.lstrip("/")
         log_struct(
             "file_not_found",
             reason="missing_file_param",
