@@ -5,6 +5,13 @@ import logging
 import functions_framework
 from flask import Response
 from google.cloud import storage
+from google.cloud import pubsub_v1
+
+TOPIC_ID = os.environ.get("TOPIC_ID", "hw3-forbidden-requests")
+PROJECT_ID = os.environ.get("GCP_PROJECT", os.environ.get("GOOGLE_CLOUD_PROJECT", ""))
+
+pubsub_publisher = pubsub_v1.PublisherClient()
+topic_path = pubsub_publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
 # Use Environment variables set at deploy time
 BUCKET_NAME = os.environ.get("BUCKET_NAME", "")
@@ -53,7 +60,18 @@ def file_reader(request):
             query=request.query_string.decode("utf-8", errors="ignore"),
             user_agent=request.headers.get("User-Agent", ""),
         )
+        
         print(f"400 permission denied: forbidden country={country} path={request.path}")
+
+        msg = {
+        "event_type": "forbidden_country",
+        "country": country,
+        "path": request.path,
+        "file": filename if "filename" in locals() else "",
+        }
+
+        pubsub_publisher.publish(topic_path, json.dumps(msg).encode("utf-8"))
+        print(f"Published forbidden request to Pub/Sub topic={TOPIC_ID}")
         return Response("400 Permission Denied\n", status=400, mimetype="text/plain")
 
 
