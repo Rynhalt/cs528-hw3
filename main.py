@@ -60,7 +60,7 @@ def file_reader(request):
             query=request.query_string.decode("utf-8", errors="ignore"),
             user_agent=request.headers.get("User-Agent", ""),
         )
-        
+
         print(f"400 permission denied: forbidden country={country} path={request.path}")
 
         msg = {
@@ -70,7 +70,12 @@ def file_reader(request):
         "file": filename if "filename" in locals() else "",
         }
 
-        pubsub_publisher.publish(topic_path, json.dumps(msg).encode("utf-8"))
+        try:
+            future = pubsub_publisher.publish(topic_path, data.encode("utf-8"))
+            msg_id = future.result(timeout=5)   # <- forces success or throws
+            print(f"Published forbidden request message_id={msg_id} topic={TOPIC_ID}")
+        except Exception as e:
+            print(f"ERROR publishing to Pub/Sub: {e}")
         print(f"Published forbidden request to Pub/Sub topic={TOPIC_ID}")
         return Response("400 Permission Denied\n", status=400, mimetype="text/plain")
 
