@@ -38,6 +38,14 @@ def file_reader(request):
         return Response("501 Not Implemented\n", status=501, mimetype="text/plain")
 
 
+    print("DEBUG",
+      "path=", request.path,
+      "full_path=", request.full_path,
+      "url=", request.url,
+      "headers_XOriginalURI=", request.headers.get("X-Original-URI", ""),
+      "headers_XForwardedUri=", request.headers.get("X-Forwarded-Uri", ""),
+      "headers_XForwardedPrefix=", request.headers.get("X-Forwarded-Prefix", ""))
+    
     filename = request.args.get("file", "")
 
 
