@@ -58,21 +58,25 @@ def main():
     subscriber = pubsub_v1.SubscriberClient(credentials=creds)
     sub_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
 
-    def callback(message: pubsub_v1.subscriber.message.Message) -> None:
+    def callback(message):
         data = message.data.decode("utf-8", errors="replace")
-        print("FORBIDDEN EVENT:", data)
-        event = None
+        print(f"RECV message_id={message.message_id} data={data}")
+
         try:
             event = json.loads(data)
         except Exception:
             event = {"raw": data}
 
-        # one line per event (include timestamp for auditability)
         ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        line = f"{ts} country={event.get('country','')} path={event.get('path','')} event_type={event.get('event_type','')}"
+        line = f"{ts} message_id={message.message_id} country={event.get('country','')} path={event.get('path','')} event_type={event.get('event_type','')}"
 
-        append_line_to_gcs(storage_client, BUCKET_NAME, LOG_OBJECT, line)
-        print(f"APPENDED to gs://{BUCKET_NAME}/{LOG_OBJECT}: {line}")
+        try:
+            append_line_to_gcs(storage_client, BUCKET_NAME, LOG_OBJECT, line)
+            print(f"ACK message_id={message.message_id}")
+            message.ack()
+        except Exception as e:
+            print(f"ERROR before ack message_id={message.message_id}: {e}")
+            message.nack()
 
     print(f"Listening on {sub_path} ... Ctrl+C to stop")
     future = subscriber.subscribe(sub_path, callback=callback)
