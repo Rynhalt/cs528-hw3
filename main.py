@@ -37,6 +37,25 @@ def file_reader(request):
         print(f"501 not implemented: method={request.method} path={request.path}")
         return Response("501 Not Implemented\n", status=501, mimetype="text/plain")
 
+    FORBIDDEN = {
+    "North Korea", "Iran", "Cuba", "Myanmar", "Iraq",
+    "Libya", "Sudan", "Zimbabwe", "Syria"
+    }
+
+    country = request.headers.get("X-country", "").strip()
+
+    if country in FORBIDDEN:
+        # structured log + print (matches your earlier style)
+        log_struct(
+            "forbidden_country",
+            country=country,
+            path=request.path,
+            query=request.query_string.decode("utf-8", errors="ignore"),
+            user_agent=request.headers.get("User-Agent", ""),
+        )
+        print(f"400 permission denied: forbidden country={country} path={request.path}")
+        return Response("400 Permission Denied\n", status=400, mimetype="text/plain")
+
 
     print("DEBUG",
       "path=", request.path,
