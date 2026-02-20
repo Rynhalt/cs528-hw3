@@ -46,14 +46,10 @@ def file_reader(request):
       "headers_XForwardedUri=", request.headers.get("X-Forwarded-Uri", ""),
       "headers_XForwardedPrefix=", request.headers.get("X-Forwarded-Prefix", ""))
     
-    filename = request.args.get("file", "")
-
+    filename = request.args.get("file", "").lstrip("/")
 
     if not filename:
-        path = request.path.lstrip("/")           
-        parts = path.split("/", 1)             
-        if len(parts) == 2 and parts[1]:
-            filename = parts[1]                  
+        filename = request.path.lstrip("/")
 
     if not filename:
         log_struct(
@@ -62,8 +58,8 @@ def file_reader(request):
             path=request.path,
             query=request.query_string.decode("utf-8", errors="ignore"),
         )
-        print("404 not found: missing filename (no query param and no path filename)")
-        return Response("404 Not Found\n", status=404, mimetype="text/plain")
+        print("404 not found: missing filename (no query param and path was '/')")
+        return Response("404 Not Found\n", status=404, mimetype="text/plain")             
 
     filename = filename.lstrip("/")
     object_name = f"{BUCKET_PREFIX}/{filename}" if BUCKET_PREFIX else filename
