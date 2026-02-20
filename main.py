@@ -37,17 +37,24 @@ def file_reader(request):
         print(f"501 not implemented: method={request.method} path={request.path}")
         return Response("501 Not Implemented\n", status=501, mimetype="text/plain")
 
+
     filename = request.args.get("file", "")
+
+
     if not filename:
-    # request.path will look like "/1585.html" when client calls it
-        filename = request.path.lstrip("/")
+        path = request.path.lstrip("/")           
+        parts = path.split("/", 1)             
+        if len(parts) == 2 and parts[1]:
+            filename = parts[1]                  
+
+    if not filename:
         log_struct(
             "file_not_found",
-            reason="missing_file_param",
+            reason="missing_filename",
             path=request.path,
             query=request.query_string.decode("utf-8", errors="ignore"),
         )
-        print("404 not found: missing 'file' query parameter")
+        print("404 not found: missing filename (no query param and no path filename)")
         return Response("404 Not Found\n", status=404, mimetype="text/plain")
 
     filename = filename.lstrip("/")
