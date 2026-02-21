@@ -52,31 +52,22 @@ def file_reader(request):
     country = request.headers.get("X-country", "").strip()
 
     if country in FORBIDDEN:
-        # structured log + print (matches your earlier style)
-        log_struct(
-            "forbidden_country",
-            country=country,
-            path=request.path,
-            query=request.query_string.decode("utf-8", errors="ignore"),
-            user_agent=request.headers.get("User-Agent", ""),
-        )
-
         print(f"400 permission denied: forbidden country={country} path={request.path}")
 
         msg = {
             "event_type": "forbidden_country",
             "country": country,
             "path": request.path,
-            "file": filename if "filename" in locals() else "",
         }
 
         try:
             payload = json.dumps(msg).encode("utf-8")
-            future = pubsub_publisher.publish(topic_path, payload)
-            msg_id = future.result(timeout=5)
+            msg_id = pubsub_publisher.publish(topic_path, payload).result(timeout=5)
             print(f"Published forbidden request message_id={msg_id} topic={TOPIC_ID}")
         except Exception as e:
             print(f"ERROR publishing to Pub/Sub: {e}")
+
+        return Response("400 Permission Denied\n", status=400, mimetype="text/plain")
 
 
     print(f"DEBUG X-country header received: '{request.headers.get('X-country', '')}'")
